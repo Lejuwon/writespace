@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>마이페이지</title>
+<link href="css/toolbar.css" rel="stylesheet">
+<style>
+    /* 기존 CSS 유지 */
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 0;
+        background: #eee;
+    }
+    .container {
+        margin-top: 50px;
+    }
+    .center-box {
+        margin: auto;
+        width: 45%;
+        padding: 20px;
+        background: #ffffff;
+        border: 1px solid #e8eef1;
+        border-radius: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+    table {
+        width: 80%;
+        margin: 0 auto 50px;
+        border-collapse: collapse;
+    }
+    th, td {
+        padding: 15px;
+        position: relative;
+    }
+    th {
+        width: 25%;
+        background-color: #f2f2f2;
+        text-align: center;
+    }
+    td.no-border {
+        border-right: none;
+        text-align: left;
+    }
+    .right-align-button {
+        padding: 10px 15px;
+        color: #fff;
+        background-color: #777777;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    .right-align-button:hover {
+        background-color: #bcbcbc;
+    }
+    .center-align-buttons {
+        text-align: center;
+        margin-top: 20px;
+    }
+    .center-align-buttons button {
+        padding: 10px 15px;
+        color: #fff;
+        background-color: #57b846; /* 연두색 */
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 0 5px;
+    }
+    .center-align-buttons button:hover {
+        background-color: #45a63a; /* 어두운 연두색 */
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (user) {
+            document.getElementById('user-nickname').textContent = `${user.nickname}님`;
+        } else {
+            alert('로그인이 필요합니다.');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        loadUserDetails(); // 사용자 정보를 불러오는 함수 호출
+    });
+
+    async function loadUserDetails() {
+        const token = localStorage.getItem('jwt_token');
+        if (!token) {
+            alert('로그인이 필요합니다.');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        const userApiUrl = 'https://05h913xawi.execute-api.ap-northeast-2.amazonaws.com/default/writespace/mypage'; // 실제 API Gateway URL
+
+        try {
+            const response = await fetch(userApiUrl, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`, // JWT 토큰을 헤더에 포함
+                },
+            });
+
+            if (!response.ok) {
+                let errorMessage = '사용자 정보를 불러오지 못했습니다.';
+                try {
+                    const errorResult = await response.json();
+                    errorMessage = errorResult.message || errorMessage;
+                } catch (_) {}
+                throw new Error(errorMessage);
+            }
+
+            const data = await response.json();
+            renderUserDetails(data);
+        } catch (error) {
+            console.error('Error fetching user data:', error);
+            alert(`사용자 정보를 불러오는 데 문제가 발생했습니다. ${error.message}`);
+        }
+    }
+
+    function renderUserDetails(user) {
+        if (!user) {
+            alert('사용자 데이터를 찾을 수 없습니다.');
+            return;
+        }
+
+        // 사용자 정보 출력
+        document.getElementById('emailText').innerText = user.email || '이메일 없음';
+        document.getElementById('nameText').innerText = user.name || '이름 없음';
+        document.getElementById('nicknameText').innerText = user.nickname || '닉네임 없음';
+    }
+</script>
+</head>
+<body>
+    <div class="toolbar">
+        <div class="left">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-house" viewBox="0 0 16 16" onclick="location.href='boardform'">
+                <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z"/>
+            </svg>
+        </div>
+        <div class="right">
+            <button onclick="location.href='logout'">logout</button>
+        </div>
+    </div>
+    <div class="container">
+        <div class="center-box">
+            <h1 style="margin-bottom:50px;">마이페이지</h1>
+            <table border="1">
+                <tr>
+                    <th>이메일</th>
+                    <td class="no-border" id="emailText"></td>
+                </tr>
+                <tr>
+                    <th>비밀번호</th>
+                    <td class="no-border"><button class="right-align-button" onclick="location.href='changePassword'">수정</button></td>
+                </tr>
+                <tr>
+                    <th>이름</th>
+                    <td class="no-border">
+                        <span id="nameText"></span>
+                        <button class="right-align-button" onclick="updateField('이름')">수정</button>
+                    </td>
+                </tr>
+                <tr>
+                    <th>닉네임</th>
+                    <td class="no-border">
+                        <span id="nicknameText"></span>
+                        <button class="right-align-button" onclick="updateField('닉네임')">수정</button>
+                    </td>
+                </tr>
+            </table>
+            <div class="center-align-buttons">
+                <button onclick="location.href='https://writespace-bucket.s3.ap-northeast-2.amazonaws.com/board.html'">홈으로</button>
+                <button onclick="confirmDelete()">탈퇴하기</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,135 @@
+async function handlePostRequest(event) {
+    const { title, content } = parsedBody;
+    let connection;
+
+    const commonHeaders = {
+        'Access-Control-Allow-Origin': '*', // 정확한 도메인 사용
+        'Access-Control-Allow-Methods': 'OPTIONS, POST, GET, PUT, DELETE', // 허용할 메소드 추가
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization', // 허용할 헤더
+    };    
+
+    try {
+        connection = await mysql.createConnection(dbConfig);
+        console.log('Connected to database.');
+
+        if (!title || !content) {
+            return {
+                statusCode: 400,
+                headers: commonHeaders,
+                body: JSON.stringify({ message: 'Title and content are required for the post.' })
+            };
+        }
+
+        // 로그인 확인
+        const userId = event.requestContext.authorizer.principalId; // JWT 토큰에서 사용자 정보 추출
+        if (!userId) {
+            return {
+                statusCode: 401,
+                headers: commonHeaders,
+                body: JSON.stringify({ message: 'User not logged in.' })
+            };
+        }
+
+        // 글 데이터 삽입
+        const [result] = await connection.execute(
+            'INSERT INTO posts (title, content, user_id, created_at) VALUES (?, ?, ?, NOW())',
+            [title, content, userId]
+        );
+
+        const postId = result.insertId;
+        console.log('Post created with ID:', postId);
+
+        if (event.httpMethod === 'OPTIONS') {
+            return {
+                statusCode: 200,
+                headers: commonHeaders,
+                body: JSON.stringify({message: '새 글이 작성되었습니다.'})
+            };
+        }
+        
+        // 성공 응답
+        // return {
+        //     statusCode: 200,
+        //     headers: commonHeaders,
+        //     body: JSON.stringify({message: '새 글이 작성되었습니다.'})
+        // };   
+
+    } catch (error) {
+        console.error('Error occurred while creating post:', error.message);
+        return {
+            statusCode: 500,
+            headers: { 'Access-Control-Allow-Origin': '*' },
+            body: JSON.stringify({ message: 'Internal server error.' })
+        };
+    } finally {
+        if (connection) {
+            await connection.end();
+            console.log('Database connection closed.');
+        }
+    }
+}
+
+
+async function handlePostRequest(event) {
+    const { title, content } = parsedBody;
+    let connection;
+
+    const commonHeaders = {
+        'Access-Control-Allow-Origin': 'https://writespace-bucket.s3.ap-northeast-2.amazonaws.com', // 정확한 도메인 사용
+        'Access-Control-Allow-Methods': 'OPTIONS, POST, GET', // 허용할 메소드 추가
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization', // 허용할 헤더
+    };    
+
+    try {
+        connection = await mysql.createConnection(dbConfig);
+        console.log('Connected to database.');
+
+        if (!title || !content) {
+            return {
+                statusCode: 400,
+                headers: commonHeaders,
+                body: JSON.stringify({ message: 'Title and content are required for the post.' })
+            };
+        }
+
+        // 로그인 확인
+        const userId = event.requestContext.authorizer.principalId; // JWT 토큰에서 사용자 정보 추출
+        if (!userId) {
+            return {
+                statusCode: 401,
+                headers: commonHeaders,
+                body: JSON.stringify({ message: 'User not logged in.' })
+            };
+        }
+
+        // 글 데이터 삽입
+        const [result] = await connection.execute(
+            'INSERT INTO posts (title, content, user_id, created_at) VALUES (?, ?, ?, NOW())',
+            [title, content, userId]
+        );
+
+        const postId = result.insertId;
+        console.log('Post created with ID:', postId);
+
+        if (event.httpMethod === 'OPTIONS') {
+            return {
+                statusCode: 200,
+                headers: commonHeaders,
+                body: JSON.stringify({message: '새 글이 작성되었습니다.'})
+            };
+        }   
+
+    } catch (error) {
+        console.error('Error occurred while creating post:', error.message);
+        return {
+            statusCode: 500,
+            headers: { 'Access-Control-Allow-Origin': '*' },
+            body: JSON.stringify({ message: 'Internal server error.' })
+        };
+    } finally {
+        if (connection) {
+            await connection.end();
+            console.log('Database connection closed.');
+        }
+    }
+}

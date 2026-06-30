@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 글</title>
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="css/toolbar.css" rel="stylesheet">
+    <style type="text/css">
+        body {
+            margin: 0;
+            background: #eee;
+        }
+
+        .timeline {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            position: relative;
+        }
+
+        .timeline:before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            bottom: 5px;
+            width: 5px;
+            background: #2d353c;
+            left: 20%;
+            margin-left: -2.5px;
+        }
+
+        .timeline>li {
+            position: relative;
+            min-height: 50px;
+            padding: 20px 0;
+        }
+
+        .timeline .timeline-icon {
+            left: 15%;
+            position: absolute;
+            width: 10%;
+            text-align: center;
+            top: 40px;
+        }
+
+        .timeline .timeline-body {
+            margin-left: 23%;
+            margin-right: 17%;
+            background: #fff;
+            position: relative;
+            padding: 20px 25px;
+            border-radius: 6px;
+        }
+
+        .timeline .timeline-header {
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e7eb;
+            line-height: 30px;
+        }
+
+        .timeline-header .userimage {
+            float: left;
+            width: 34px;
+            height: 34px;
+            border-radius: 40px;
+            overflow: hidden;
+            margin: -2px 10px -2px 0;
+        }
+
+        .timeline-header .username {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .timeline img {
+            max-width: 100%;
+            display: block;
+        }
+
+        .timeline-content {
+            letter-spacing: .25px;
+            line-height: 18px;
+            font-size: 13px;
+        }
+
+        .timeline-footer {
+            background: #fff;
+            border-top: 1px solid #e2e7ec;
+            padding-top: 15px;
+        }
+
+        .timeline-footer .btn-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .timeline-footer .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .timeline-footer .btn-edit {
+            background-color: #4CAF50;
+        }
+
+        .timeline-footer .btn-edit:hover {
+            background-color: #45a049;
+        }
+
+        .timeline-footer .btn-delete {
+            background-color: #f44336;
+        }
+
+        .timeline-footer .btn-delete:hover {
+            background-color: #e53935;
+        }
+
+        .timeline .timeline-icon {
+            left: 3%; /* 선 왼쪽으로 위치 조정 */
+            position: absolute;
+            width: 15%; /* 날짜의 폭 조정 */
+            text-align: right; /* 날짜를 오른쪽 정렬 */
+            top: 40px;
+        }
+
+        .timeline .timeline-icon p {
+            font-size: 14px;
+            color: #2d353c;
+            margin: 0;
+            padding: 0;
+        }
+
+        .timeline:before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            bottom: 5px;
+            width: 5px;
+            background: #2d353c;
+            left: 20%; /* 선 위치 유지 */
+            margin-left: -2.5px;
+        }
+
+        .timeline .timeline-body {
+            margin-left: 23%;
+            margin-right: 17%;
+            background: #fff;
+            position: relative;
+            padding: 20px 25px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <div class="left">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-house" viewBox="0 0 16 16" onclick="location.href='boardform'">
+                <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z"/>
+            </svg>
+        </div>
+        <div class="right">
+            <span id="nickname"></span>
+            <button onclick="location.href='logout'">로그아웃</button>
+        </div>
+    </div>
+    <div class="container">
+        <ul class="timeline" id="timeline">
+            <!-- 게시글 목록이 여기에 동적으로 추가됩니다. -->
+        </ul>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script>
+        // 페이지 로딩 시 자동으로 내 글을 불러오기
+        document.addEventListener('DOMContentLoaded', function () {
+            loadUserPosts();
+        });
+
+        // 게시글 불러오기
+        async function loadUserPosts() {
+            const token = localStorage.getItem('token');  // JWT 토큰 가져오기
+            const user = JSON.parse(localStorage.getItem('user'));
+
+            if (!token) {
+                alert('로그인 후 이용해주세요.');
+                return;
+            }
+
+            const userId = user.id;  // user 객체에서 id 값 추출
+            if (!userId) {
+                alert('사용자 ID를 찾을 수 없습니다.');
+                return;
+            }
+
+            const url = new URL('https://05h913xawi.execute-api.ap-northeast-2.amazonaws.com/default/writespace/myposts');
+            url.searchParams.set('userId', userId);
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,  // JWT 토큰을 Authorization 헤더에 포함
+                    },
+                });
+
+                if (!response.ok) {
+                    const errorResult = await response.json();
+                    throw new Error(errorResult.message || '내 글을 불러오지 못했습니다.');
+                }
+
+                const result = await response.json();
+                console.log('Fetched posts:', result);
+                renderPosts(result.posts);  // 게시글 렌더링
+            } catch (error) {
+                console.error('Error loading user posts:', error);
+                alert(`게시글 로드 중 오류: ${error.message}`);
+            }
+        }
+
+        // 게시글 목록 렌더링
+        function renderPosts(posts) {
+            if (!posts || posts.length === 0) {
+                document.getElementById('timeline').innerHTML = '<li>게시글이 없습니다.</li>';
+                return;
+            }
+
+            const userAvatars = {};
+            posts.forEach(post => {
+                if (!userAvatars[post.authorId]) {
+                    userAvatars[post.authorId] = Object.keys(userAvatars).length % 8;
+                }
+            });
+
+            const postList = posts.map(post => `
+                <li>
+                    <div class="timeline-icon">
+                        <p>${new Date(post.created_at).toISOString().split('T')[0]}</p>
+                    </div>
+                    <div class="timeline-body">
+                        <div class="timeline-header">
+                            <span class="userimage">
+                                <img src="https://bootdey.com/img/Content/avatar/avatar${userAvatars[post.authorId]}.png" alt>
+                            </span>
+                            <span class="title">
+                                <p>${post.title}</p>
+                            </span>
+                        </div>
+                        <div class="timeline-content">
+                            <p>${post.content}</p>
+                        </div>
+                        <div class="timeline-footer">
+                            <div class="btn-group">
+                                <button class="btn btn-edit" onclick="location.href='https://writespace-bucket.s3.ap-northeast-2.amazonaws.com/post_view.html?id=${post.postId}'">수정</button>
+                                <button class="btn btn-delete" onclick="deletePost('${post.post_id}')">삭제</button>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            `).join('');
+            document.getElementById('timeline').innerHTML = postList;
+        }
+
+
+        // 게시글 삭제 함수
+        async function deletePost(postId) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('로그인 후 이용해주세요.');
+                return;
+            }
+
+            if (confirm('정말 삭제하시겠습니까?')) {
+                try {
+                    const response = await fetch(`https://05h913xawi.execute-api.ap-northeast-2.amazonaws.com/default/writespace/myposts/${postId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`,
+                        },
+                    });
+
+                    if (!response.ok) {
+                        const errorResult = await response.json();
+                        throw new Error(errorResult.message || '게시글 삭제에 실패했습니다.');
+                    }
+
+                    alert('게시글이 삭제되었습니다.');
+                    loadUserPosts();  // 삭제 후 게시글 새로 고침
+                } catch (error) {
+                    console.error('Error deleting post:', error);
+                    alert(`게시글 삭제 중 오류: ${error.message}`);
+                }
+            }
+        }
+
+        // 페이지 로드 시 닉네임과 작성자 정보 표시
+        window.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('user')); // 로컬 스토리지에서 사용자 정보 가져오기
+            if (user) {
+                document.getElementById('nickname').textContent = `${user.nickname}님`; // 닉네임 표시
+                document.getElementById('author-name').textContent = user.nickname; // 작성자 표시
+            } else {
+                alert('로그인이 필요합니다.');
+                window.location.href = 'login.html'; // 로그인 페이지로 리디렉션
+            }
+        });
+    </script>
+</body>
+</html>

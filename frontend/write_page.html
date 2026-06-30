@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>글쓰기</title>
+<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+<link href="css/toolbar.css" rel="stylesheet">
+<style type="text/css">
+body {
+    margin: 0;
+    background: #eee;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    margin-top: 50px;
+}
+
+.center-box {
+    margin: auto;
+    width: 45%;
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #e8eef1;
+    border-radius: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-control {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.margin-right {
+    margin-right: 10px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #57b846;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    width: calc(50% - 5px);
+}
+
+.btn:hover {
+    background-color: #45a63a;
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #57b846;
+    color: #fff;
+    padding: 10px;
+}
+
+.toolbar .left svg {
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+}
+
+.toolbar .right {
+    display: flex;
+    align-items: center;
+}
+
+.toolbar .right span {
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.toolbar .right button {
+    background-color: #6c757d;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.toolbar .right button:hover {
+    background-color: #5a6268;
+}
+
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.button-group button {
+    flex: 1;
+}
+</style>
+</head>
+<body>
+    <div class="toolbar">
+        <div class="left">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-house" viewBox="0 0 16 16" onclick="location.href='boardform'">
+                <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z"/>
+            </svg>
+        </div>
+        <div class="right">
+            <span id="nickname"></span>
+            <button onclick="location.href='logout'">로그아웃</button>
+        </div>
+    </div>
+    <div class="container">
+        <div class="center-box">
+            <h2 class="text-center">글쓰기</h2>
+            <form id="writePostForm" action="write_page" method="post">
+                <div class="form-group">
+                    <label for="title">제목:</label>
+                    <input type="text" class="form-control margin-right" name="title" placeholder="제목을 입력하세요" required>
+                </div>
+                <div class="form-group">
+                    <label for="author">작성자:</label>
+                    <span id="author-name"></span>
+                </div>
+                <div class="form-group">
+                    <label for="content">내용:</label>
+                    <textarea class="form-control" name="content" placeholder="내용을 입력하세요" rows="5" required></textarea>
+                </div>
+                <div class="button-group">
+                    <button type="submit" class="btn">완료</button>
+                    <button type="button" class="btn" onclick="location.href='https://writespace-bucket.s3.ap-northeast-2.amazonaws.com/board.html'">돌아가기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 페이지 로드 시 닉네임과 작성자 정보 표시
+        window.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('user')); // 로컬 스토리지에서 사용자 정보 가져오기
+            if (user) {
+                document.getElementById('nickname').textContent = `${user.nickname}님`; // 닉네임 표시
+                document.getElementById('author-name').textContent = user.nickname; // 작성자 표시
+            } else {
+                alert('로그인이 필요합니다.');
+                window.location.href = 'login.html'; // 로그인 페이지로 리디렉션
+            }
+        });
+
+        // 글쓰기 폼 제출 이벤트
+        document.querySelector('#writePostForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            // 입력 값 가져오기
+            const title = document.querySelector('input[name="title"]').value;
+            const content = document.querySelector('textarea[name="content"]').value;
+
+            // localStorage에서 JWT 토큰 가져오기
+            const token = localStorage.getItem('token');
+            // 자바스크립트에서 user를 올바르게 처리
+            const user = JSON.parse(localStorage.getItem('user')); // 객체로 변환
+            console.log(token);
+
+            if (!token) {
+                alert('로그인 후 글을 작성해주세요.');
+                return;
+            }
+            
+            try {
+                const response = await fetch('https://05h913xawi.execute-api.ap-northeast-2.amazonaws.com/default/writespace/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ 
+                        action: 'createPost',  // 액션 추가
+                        title,
+                        user,
+                        content,
+                    }),
+                    mode: 'cors',
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('글 작성 성공!');
+                    window.location.replace('https://writespace-bucket.s3.ap-northeast-2.amazonaws.com/board.html'); // 글 목록 페이지로 리다이렉트
+                } else {
+                    alert(result.error || '글 작성 실패. 다시 시도해주세요.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('글 작성 중 오류가 발생했습니다. 다시 시도해주세요.');
+            }
+        });
+    </script>
+</body>
+</html>

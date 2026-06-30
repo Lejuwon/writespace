@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>글 수정</title>
+<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+<link href="css/toolbar.css" rel="stylesheet">
+<style type="text/css">
+body {
+    margin: 0;
+    background: #eee;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    margin-top: 50px; /* 윗부분에 마진 추가 */
+}
+
+.center-box {
+    margin: auto;
+    width: 45%;
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #e8eef1;
+    border-radius: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-control {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.margin-right {
+    margin-right: 10px; /* 오른쪽 마진 추가 */
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #57b846; /* 연두색 */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    width: calc(50% - 5px); /* 버튼의 가로 길이 설정 및 간격 조정 */
+}
+
+.btn:hover {
+    background-color: #45a63a; /* 어두운 연두색 */
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #57b846; /* 연두색 */
+    color: #fff;
+    padding: 10px;
+}
+
+.toolbar .left svg {
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+}
+
+.toolbar .right {
+    display: flex;
+    align-items: center;
+}
+
+.toolbar .right span {
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.toolbar .right button {
+    background-color: #6c757d; /* 회색 */
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.toolbar .right button:hover {
+    background-color: #5a6268; /* 어두운 회색 */
+}
+
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px; /* 버튼 사이의 간격 */
+}
+
+.button-group button {
+    flex: 1;
+}
+</style>
+</head>
+<body>
+    <div class="toolbar">
+        <div class="left">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-house" viewBox="0 0 16 16" onclick="goHome()">
+                <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z"/>
+            </svg>
+        </div>
+        <div class="right">
+            <c:choose>
+                <c:when test="${not empty user}">
+                    <span onclick="location.href='mypage'">${user.nickname}님</span>
+                </c:when>
+            </c:choose>
+            <button onclick="location.href='logout'">로그아웃</button>
+        </div>
+    </div>
+<div class="container">
+    <div class="center-box">
+        <h2 class="text-center">글 수정</h2>
+        <form action="mypost_edit_page" method="post">
+            <input type="hidden" name="postId" value="${post.postId}">
+            <div class="form-group">
+                <label for="title">제목:</label>
+                <input type="text" class="form-control margin-right" name="title" value="${post.title}" placeholder="제목" required>
+            </div>
+            <div class="form-group">
+                <label for="author">작성자:</label>
+                ${user.nickname}
+            </div>
+            <div class="form-group">
+                <label for="content">내용:</label>
+                <textarea class="form-control" name="content" placeholder="내용을 입력해주세요" rows="5" required>${post.content}</textarea>
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn">수정 완료</button>
+                <button type="button" class="btn" onclick="location.href='https://writespace-bucket.s3.ap-northeast-2.amazonaws.com/mypost_page.html'">뒤로가기</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // 페이지 로드 및 게시글 로드
+    window.addEventListener('DOMContentLoaded', () => {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (user) {
+            document.getElementById('user-nickname').textContent = `${user.nickname}님`;
+        } else {
+            alert('로그인이 필요합니다.');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const postId = urlParams.get('id');
+
+        if (!postId) {
+            alert('유효하지 않은 게시글 ID입니다.');
+            window.history.back();
+            return;
+        }
+
+        loadPostDetails(postId);
+    });
+
+    async function loadPostDetails(postId) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('로그인이 필요합니다.');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        const url = new URL('https://05h913xawi.execute-api.ap-northeast-2.amazonaws.com/default/writespace/posts');
+        url.searchParams.set('postId', postId);
+
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                let errorMessage = '게시글을 불러오지 못했습니다.';
+                try {
+                    const errorResult = await response.json();
+                    errorMessage = errorResult.message || errorMessage;
+                } catch (_) {}
+                throw new Error(errorMessage);
+            }
+
+            const result = await response.json();
+            renderPostDetails(result.post);
+        } catch (error) {
+            console.error('Error loading post details:', error);
+            alert(`게시글 상세 정보 로드 중 오류: ${error.message}`);
+        }
+    }
+
+    function renderPostDetails(post) {
+        if (!post) {
+            alert('게시글 데이터를 찾을 수 없습니다.');
+            window.history.back();
+            return;
+        }
+
+        document.getElementById('post-title').innerText = post.title || '제목 없음';
+        document.getElementById('post-nickname').innerText = post.nickname || '작성자 없음'; // 수정된 부분
+        document.getElementById('post-content').innerText = post.content || '내용이 없습니다.';
+    }
+</script>
+</body>
+</html>
